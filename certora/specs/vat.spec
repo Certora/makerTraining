@@ -105,9 +105,7 @@ hook Sload uint256 value ilks[KEY bytes32 ilkID].rate STORAGE {
 hook Sstore ilks[KEY bytes32 ilkID].rate uint256 value 
     (uint256 old_value) STORAGE {
     rateGhost[ilkID] = value;
-    productGhost = productGhost 
-                        + (value * ArtGhost[ilkID]) 
-                        - (old_value * ArtGhost[ilkID]);
+    productGhost = productGhost + ((value - old_value) * ArtGhost[ilkID]);
 }
 
 
@@ -124,9 +122,7 @@ hook Sload uint256 value ilks[KEY bytes32 ilkID].Art STORAGE {
 hook Sstore ilks[KEY bytes32 ilkID].Art uint256 value 
     (uint256 old_value) STORAGE {
     ArtGhost[ilkID] = value;
-    productGhost = productGhost 
-                        + (rateGhost[ilkID] * value) 
-                        - (rateGhost[ilkID] * old_value);
+    productGhost = productGhost + ((value - old_value) * rateGhost[ilkID]);
 }
 
 
