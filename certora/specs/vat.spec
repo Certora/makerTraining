@@ -152,23 +152,17 @@ hook Sstore gem[KEY bytes32 ilkID][KEY address user] uint256 value
 // ///////////////////////////////////////////////////
 
 
-// definition excludeMethods(method f) returns bool =
-//     f.selector != sig:upgradeTo(address).selector
-//     && f.selector != sig:upgradeToAndCall(address,bytes).selector;
+definition WAD() returns uint256 = 10^18;
+definition RAY_CVL() returns uint256 = 10^27;
+definition RAD() returns uint256 = 10^45;
 
 
-// definition WAD() returns uint256 = 10^18;
-// definition RAY_CVL() returns uint256 = 10^27;
-// definition RAD() returns uint256 = 10^45;
-
-
-// function validState(bytes32 ilkID) {
-//     requireInvariant artsCorrelations(ilkID);
-//     requireInvariant inksCorrelation(ilkID);
-//     requireInvariant allETHvsDebt();
-//     requireInvariant absolution();
-//     requireInvariant theFundamentalEquationOfAllETH();
-// }
+function validState(bytes32 ilkID) {
+    requireInvariant artsCorrelations(ilkID);
+    requireInvariant allETHvsDebt();
+    requireInvariant absolution();
+    requireInvariant theFundamentalEquationOfAllETH();
+}
 
 
 
@@ -220,130 +214,120 @@ rule gemInkConstant(env e, method f) {
 }
 
 
-// // STATUS - verified
-// // shouldn't be able to generate more debt (frob with positive dart) if Ilk.Art * Ilk.rate > Ilk.line (then Art can't increase)
-// rule cantGoDeeperInDebt(env e, method f) filtered { f -> f.selector == sig:frob(bytes32,address,address,address,int256,int256,address,address).selector } {
-//     bytes32 ilkID; 
-//     address urn;
+// STATUS - verified
+// shouldn't be able to generate more debt (frob with positive dart) if Ilk.Art * Ilk.rate > Ilk.line (then Art can't increase)
+rule cantGoDeeperInDebt(env e, method f) filtered { f -> f.selector == sig:frob(bytes32,address,address,address,int256,int256).selector } {
+    bytes32 ilkID; 
+    address urn;
 
-//     validState(ilkID);
+    validState(ilkID);
 
-//     uint256 ArtBefore = Art(ilkID);
-//     uint256 rateBefore = rate(ilkID);
-//     uint256 lineBefore = line(ilkID);
+    uint256 ArtBefore = Art(ilkID);
+    uint256 rateBefore = rate(ilkID);
+    uint256 lineBefore = line(ilkID);
 
-//     calldataarg args;
-//     f(e, args);
+    calldataarg args;
+    f(e, args);
 
-//     uint256 ArtAfter = Art(ilkID);
+    uint256 ArtAfter = Art(ilkID);
 
-//     assert (ArtBefore * rateBefore > to_mathint(lineBefore)) 
-//                 => ArtBefore >= ArtAfter, "Remember, with great power comes great responsibility.";
-// }
-
-
-// // STATUS - verified
-// // if an urn has 0 < art * rate < dust, then a successful call to frob with that urn as the u argument should result in art == 0 || art * rate >= dust. (Ilk.dust is intended to ensure a Vault cannot be too small to profitably liquidate)
-// rule sayNoToProfitableLiquidation(env e) {
-//     bytes32 ilkID;
-//     address urn;
-//     address v;
-//     address w;
-//     int dink;
-//     int dart;
-//     address prev;
-//     address next;
-
-//     validState(ilkID);
-
-//     uint256 artBefore = art(ilkID, urn);
-//     uint256 rateBefore = rate(ilkID);
-//     uint256 dustBefore = dust(ilkID);
-
-//     frob(e, ilkID, urn, v, w, dink, dart, prev, next);
-
-//     uint256 artAfter = art(ilkID, urn);
-//     uint256 rateAfter = rate(ilkID);
-//     uint256 dustAfter = dust(ilkID);
-
-//     assert (0 < artBefore * rateBefore || artBefore * rateBefore < to_mathint(dustBefore))
-//             => (artAfter == 0 || artAfter * rateAfter >= to_mathint(dustAfter));
-// }
+    assert (ArtBefore * rateBefore > to_mathint(lineBefore)) 
+                => ArtBefore >= ArtAfter, "Remember, with great power comes great responsibility.";
+}
 
 
-// // STATUS - verified. Bug: T.1 fork function can create positions that can be liquidated immediately and cause a drain of funds 
-// // Helth factor sahould be preserved after fork() call
-// rule healthFactorAfterFork(env e) {
-//     bytes32 ilkID;
-//     address urn;
-//     address dst;
-//     int dink;
-//     int dart;
-//     address srcPrev;
-//     address srcNext;
-//     address dstPrev;
-//     address dstNext;
+// STATUS - verified
+// if an urn has 0 < art * rate < dust, then a successful call to frob with that urn as the u argument should result in art == 0 || art * rate >= dust. (Ilk.dust is intended to ensure a Vault cannot be too small to profitably liquidate)
+rule sayNoToProfitableLiquidation(env e) {
+    bytes32 ilkID;
+    address urn;
+    address v;
+    address w;
+    int dink;
+    int dart;
+    address prev;
+    address next;
 
-//     validState(ilkID);
+    validState(ilkID);
+
+    uint256 artBefore = art(ilkID, urn);
+    uint256 rateBefore = rate(ilkID);
+    uint256 dustBefore = dust(ilkID);
+
+    frob(e, ilkID, urn, v, w, dink, dart);
+
+    uint256 artAfter = art(ilkID, urn);
+    uint256 rateAfter = rate(ilkID);
+    uint256 dustAfter = dust(ilkID);
+
+    assert (0 < artBefore * rateBefore || artBefore * rateBefore < to_mathint(dustBefore))
+            => (artAfter == 0 || artAfter * rateAfter >= to_mathint(dustAfter));
+}
+
+
+// STATUS - verified
+// Helth factor sahould be preserved after fork() call
+rule healthFactorAfterFork(env e) {
+    bytes32 ilkID;
+    address urn;
+    address dst;
+    int dink;
+    int dart;
+
+    validState(ilkID);
     
-//     fork(e, ilkID, urn, dst, dink, dart, srcPrev, srcNext, dstPrev, dstNext);
+    fork(e, ilkID, urn, dst, dink, dart);
 
-//     uint256 inkUrn = ink(ilkID, urn);
-//     require inkUrn >= WAD();
-//     uint256 inkDst = ink(ilkID, dst);
-//     require inkDst >= WAD();
+    uint256 inkUrn = ink(ilkID, urn);
+    require inkUrn >= WAD();
+    uint256 inkDst = ink(ilkID, dst);
+    require inkDst >= WAD();
 
-//     uint256 artUrn = art(ilkID, urn);
-//     require artUrn >= WAD();
-//     uint256 artDst = art(ilkID, dst);
-//     require artDst >= WAD();
+    uint256 artUrn = art(ilkID, urn);
+    require artUrn >= WAD();
+    uint256 artDst = art(ilkID, dst);
+    require artDst >= WAD();
 
-//     uint256 spot = spot(ilkID);
-//     require spot >= RAY_CVL();
-//     uint256 mat = mat(ilkID);
-//     require to_mathint(mat) == (RAY_CVL() / 10 * 7); // assumption that mat is 0.7 RAY
-//     uint256 rate = rate(ilkID);
-//     require rate >= RAY_CVL();
+    uint256 spot = spot(ilkID);
+    require spot >= RAY_CVL();
+    uint256 rate = rate(ilkID);
+    require rate >= RAY_CVL();
 
-//     assert (rate * artUrn <= inkUrn * spot / RAY_CVL() * mat)
-//             && (rate * artDst <= inkDst * spot / RAY_CVL() * mat);
-// }
+    assert (rate * artUrn <= inkUrn * spot)
+            && (rate * artDst <= inkDst * spot);
+}
 
 
 
-// // STATUS - verified
-// // Helth factor should be preserved after frob() call
-// rule healthFactorAfterFrob(env e) {
-//     bytes32 ilkID;
-//     address urn;
-//     address v;
-//     address w;
-//     int dink;
-//     int dart;
-//     address prev;
-//     address next;
+// STATUS - verified
+// Helth factor should be preserved after frob() call
+rule healthFactorAfterFrob(env e) {
+    bytes32 ilkID;
+    address urn;
+    address v;
+    address w;
+    int dink;
+    int dart;
 
-//     validState(ilkID);
+    validState(ilkID);
 
-//     require dart > 0 || dink < 0;
+    // require dart > 0 || dink < 0;
     
-//     frob(e, ilkID, urn, v, w, dink, dart, prev, next); // tab <= urn.ink * ilk.spot * ilk.mat / RAY
+    frob(e, ilkID, urn, v, w, dink, dart);
 
-//     uint256 inkUrn = ink(ilkID, urn);
-//     require inkUrn >= WAD();
+    uint256 inkUrn = ink(ilkID, urn);
+    require inkUrn >= WAD();
 
-//     uint256 artUrn = art(ilkID, urn);
-//     require artUrn >= WAD();
+    uint256 artUrn = art(ilkID, urn);
+    require artUrn >= WAD();
 
-//     uint256 spot = spot(ilkID);
-//     require spot >= RAY_CVL();
-//     uint256 mat = mat(ilkID);
-//     require to_mathint(mat) == (RAY_CVL() / 10 * 7); // assumption that mat is 0.7 RAY
-//     uint256 rate = rate(ilkID);
-//     require rate >= RAY_CVL();
+    uint256 spot = spot(ilkID);
+    require spot >= RAY_CVL();
+    uint256 rate = rate(ilkID);
+    require rate >= RAY_CVL();
 
-//     assert (rate * artUrn <= inkUrn * spot / RAY_CVL() * mat);
-// }
+    assert dart > 0 => (rate * artUrn <= inkUrn * spot);
+}
 
 
 
