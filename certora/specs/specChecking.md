@@ -17,21 +17,20 @@
 ---
 ###  vacuity 
 
-- a rule is violated when there is a state that reachs the assert and violates the assartion
-- if there is no such state the rule can not be violated and therefor it is verified 
+- a rule is violated when there is a state that reaches the assert and violates the assertion
+- if there is no such state the rule can not be violated and therefore it is verified 
 
-###  tutology 
+###  tautology 
 - a rule that is verified regardless of the code
 
 ### low coverage
-- a rule that is verfied but only on a small subset of states\paths 
+- a rule that is verified but only on a small subset of states\paths 
 
 [run without any checks](https://prover.certora.com/output/40726/ae573916bde243929b216ccd73d891bf/?anonymousKey=f07d11423064e5267d597d2b3893ad7235d54b9f)
-     -- vacuity and tutology passe
+     -- vacuity and tautology passe
 
-### missign rule
+### missing rule
 - which rule is still needed
-
 
 
      
@@ -45,12 +44,11 @@
     - 
 
 
-    advance: 
+    [advance](https://prover.certora.com/output/40726/dd1624f0bd8045ed8c3730636f05529d/?anonymousKey=57e6cae5e7cc8403d3ac47dca2241955acd7e1d0) 
     - has false positives (e.g., onlyDenyRelyCanChange )
-    - finds more problem (e.g, anotherTutology  privilegeAdvance)
+    - finds more problems (e.g, anotherTutology  privilegeAdvance)
 
     'certoraRun certora/conf/jugPlusBasicSanity.conf --msg "rule sanity advanced" --rule_sanity advanced  ' 
-    [link](https://prover.certora.com/output/40726/dd1624f0bd8045ed8c3730636f05529d/?anonymousKey=57e6cae5e7cc8403d3ac47dca2241955acd7e1d0)
 
 
 ### bug_injection
@@ -62,7 +60,7 @@
         //mutate switch mod(n, 2) case 0 { z := b } default { z := x }
           switch mod(n, 2) case 0 { z := x } default { z := b }
     ```
- - gmabit (automatic bug injection and spec checking)
+ - gambit (automatic bug injection and spec checking)
     [docs](https://docs.certora.com/en/latest/docs/gambit/index.html)
 
      `certoraMutate --prover_conf certora/conf/jugPlusBasicSanity.conf --mutation_conf certora/conf/mutateJug.conf`
@@ -106,7 +104,7 @@ rule multipleUC() {
 
 ## checking for unreachable issue
 ---
- - write the minial rule
+ - write the minimal rule
  - with coverage information
  [sanity rule](https://prover.certora.com/output/40726/7e8b84b8c4114e8f8e466a99350975a8/UnsatCoreVisualisation.html?anonymousKey=9340d433406d76eae452faed44ddca2528de7301)
 
